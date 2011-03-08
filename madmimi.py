@@ -311,7 +311,7 @@ class MadMimi(object):
         else:
             return parse_lists(response)
 
-    def send_message(self, name, email, promotion, subject, sender, body={}):
+    def send_message(self, name, email, promotion, subject, sender, body={}, raw_plain_text='', raw_html=''):
         """Sends a message to a user.
 
         Arguments:
@@ -322,7 +322,10 @@ class MadMimi(object):
             sender: Email address the email should appear to be from.
             body: Dict holding variables for the promotion template.
                     {'variable': 'Replcement value'}
-
+            raw_html: Specify custom html for the email. Make sure you include [[tracking_beacon]] 
+                        macro or [[unsubscribe]] if it's a list.
+            raw_plain_text: Use this instead of raw_html if you need to specify a custom text 
+                            email template.
         Returns:
             The transaction id of the message if successful.
             The error if unsuccessful.
@@ -334,10 +337,17 @@ class MadMimi(object):
 
         recipients = "%s <%s>" % (name, email)
         body = dump(body)
-
+        
+        templates = {}
+        if raw_plain_text:
+            templates['raw_plain_text'] = raw_plain_text
+        else:
+            if raw_html:
+                templates['raw_html'] = raw_html
+            
         return self._post('mailer', promotion_name=promotion,
                 recipients=recipients, subject=subject, sender=sender,
-                body=body, is_secure=True)
+                body=body, is_secure=True, **templates)
 
     def send_message_to_list(self, list_name, promotion, body={}):
         """Send a promotion to a subscriber list.
